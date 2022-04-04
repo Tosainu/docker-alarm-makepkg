@@ -36,7 +36,6 @@ RUN \
     --hookdir /rootfs/alpm-hooks/usr/share/libalpm/hooks/ base base-devel && \
   sed -i 's/^#\(en_US\.UTF-8\)/\1/' /rootfs/etc/locale.gen && \
   ln -s /usr/lib/os-release /rootfs/etc/os-release && \
-  cp -a /etc/pacman.d/gnupg /rootfs/etc/pacman.d/ && \
   echo 'alarm ALL=(ALL) NOPASSWD: ALL' >> /rootfs/etc/sudoers && \
   rm -rf /rootfs/alpm-hooks /rootfs/var/lib/pacman/sync/*
 
