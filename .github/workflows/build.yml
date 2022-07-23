@@ -20,7 +20,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v3.0.0
+      - uses: docker/build-push-action@v3.1.0
         with:
           tags: ghcr.io/tosainu/alarm-makepkg:latest
           context: .
