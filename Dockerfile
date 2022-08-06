@@ -16,7 +16,7 @@ RUN \
   gpg --recv-keys 68B3537F39A313B3E574D06777193F152BDBE6A6 && \
   gpg --verify ArchLinuxARM-$PLATFORM-latest.tar.gz.sig && \
   mkdir /rootfs && \
-  bsdtar -xpf ArchLinuxARM-$PLATFORM-latest.tar.gz -C /rootfs && \
+  tar xf ArchLinuxARM-$PLATFORM-latest.tar.gz -C /rootfs && \
   rm ArchLinuxARM-$PLATFORM-latest.tar.gz ArchLinuxARM-$PLATFORM-latest.tar.gz.sig
 
 FROM scratch AS pacstrap
