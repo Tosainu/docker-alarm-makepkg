@@ -24,7 +24,6 @@ COPY --from=base /rootfs/ /
 RUN \
   pacman-key --init && \
   pacman-key --populate archlinuxarm && \
-  pacman -Sy arch-install-scripts --needed --noconfirm && \
   mkdir -p /rootfs && \
   mkdir -m 0755 -p /rootfs/var/{cache/pacman/pkg,lib/pacman,log} && \
   mkdir -m 0755 -p /rootfs/{dev,run,etc/pacman.d} && \
@@ -34,8 +33,10 @@ RUN \
   bash -c "find /usr/share/libalpm/hooks -exec ln -sf /dev/null /rootfs/alpm-hooks{} \;" && \
   pacman -r /rootfs -Sy --noconfirm --noscriptlet \
     --hookdir /rootfs/alpm-hooks/usr/share/libalpm/hooks/ base base-devel && \
+  pacman -r /rootfs -S --noconfirm --noscriptlet \
+    --hookdir /rootfs/alpm-hooks/usr/share/libalpm/hooks/ archlinuxarm-keyring && \
   sed -i 's/^#\(en_US\.UTF-8\)/\1/' /rootfs/etc/locale.gen && \
-  ln -s /usr/lib/os-release /rootfs/etc/os-release && \
+  ln -s ../usr/lib/os-release /rootfs/etc/os-release && \
   echo 'alarm ALL=(ALL) NOPASSWD: ALL' >> /rootfs/etc/sudoers && \
   rm -rf /rootfs/alpm-hooks /rootfs/var/lib/pacman/sync/*
 
