@@ -32,7 +32,7 @@ RUN \
   mkdir -p /rootfs/alpm-hooks/usr/share/libalpm/hooks && \
   bash -c "find /usr/share/libalpm/hooks -exec ln -sf /dev/null /rootfs/alpm-hooks{} \;" && \
   pacman -r /rootfs -Sy --noconfirm --noscriptlet \
-    --hookdir /rootfs/alpm-hooks/usr/share/libalpm/hooks/ base base-devel && \
+    --hookdir /rootfs/alpm-hooks/usr/share/libalpm/hooks/ base base-devel git openssh && \
   pacman -r /rootfs -S --noconfirm --noscriptlet \
     --hookdir /rootfs/alpm-hooks/usr/share/libalpm/hooks/ archlinuxarm-keyring && \
   sed -i 's/^#\(en_US\.UTF-8\)/\1/' /rootfs/etc/locale.gen && \
