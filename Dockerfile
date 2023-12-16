@@ -1,53 +1,43 @@
-FROM --platform=$BUILDPLATFORM alpine:3.19.0 AS base
+# syntax=docker/dockerfile:1-labs
+
+FROM --platform=$BUILDPLATFORM archlinux:latest@sha256:1f83ba0580a15cd6ad1d02d62ad432ddc940f53f07d0e39c8982d6c9c74e53e0 as pacstrap
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
-RUN \
-  apk add --no-cache curl gnupg libarchive-tools && \
+ARG ARCHLINUXARM_PACKAGE_KEY=68B3537F39A313B3E574D06777193F152BDBE6A6
+RUN --mount=type=tmpfs,target=/tmp \
+  pacman-key --init && \
+  pacman-key --populate archlinux && \
+  pacman -Syy --noconfirm archlinux-keyring && \
+  pacman -Su --noconfirm arch-install-scripts && \
+  pacman-key --recv-keys "$ARCHLINUXARM_PACKAGE_KEY" && \
+  pacman-key --finger "$ARCHLINUXARM_PACKAGE_KEY" && \
+  pacman-key --lsign-key "$ARCHLINUXARM_PACKAGE_KEY" && \
+  echo 'Server = http://mirror.archlinuxarm.org/$arch/$repo' > /etc/pacman.d/mirrorlist_arm && \
+  sed 's!\(/etc/pacman.d/mirrorlist\)!\1_arm! ; /NoExtract\s*=.*\betc\/pacman.conf\b.*/d' /etc/pacman.conf > /etc/pacman_arm.conf && \
   case "$TARGETPLATFORM" in \
   linux/arm64) \
-    PLATFORM=aarch64 ;; \
+    sed 's/\(Architecture\s*=\).\+$/\1 aarch64/' -i /etc/pacman_arm.conf ;; \
   linux/arm/v7) \
-    PLATFORM=armv7 ;; \
+    sed 's/\(Architecture\s*=\).\+$/\1 armv7h/' -i /etc/pacman_arm.conf ;; \
   *) \
     exit 1 ;; \
   esac && \
-  curl -LO http://os.archlinuxarm.org/os/ArchLinuxARM-$PLATFORM-latest.tar.gz && \
-  curl -LO http://os.archlinuxarm.org/os/ArchLinuxARM-$PLATFORM-latest.tar.gz.sig && \
-  gpg --recv-keys 68B3537F39A313B3E574D06777193F152BDBE6A6 && \
-  gpg --verify ArchLinuxARM-$PLATFORM-latest.tar.gz.sig && \
-  mkdir /rootfs && \
-  tar xf ArchLinuxARM-$PLATFORM-latest.tar.gz -C /rootfs && \
-  rm ArchLinuxARM-$PLATFORM-latest.tar.gz ArchLinuxARM-$PLATFORM-latest.tar.gz.sig
-
-FROM scratch AS pacstrap
-COPY --from=base /rootfs/ /
-RUN \
-  pacman-key --init && \
-  pacman-key --populate archlinuxarm && \
+  pacman -Syydd --noconfirm --config /etc/pacman_arm.conf --dbpath "$(mktemp -d)" archlinuxarm-keyring && \
+  pacman-key --populate archlinuxarm
+RUN --security=insecure \
   mkdir -p /rootfs && \
-  mkdir -m 0755 -p /rootfs/var/{cache/pacman/pkg,lib/pacman,log} && \
-  mkdir -m 0755 -p /rootfs/{dev,run,etc/pacman.d} && \
-  mkdir -m 1777 -p /rootfs/tmp && \
-  mkdir -m 0555 -p /rootfs/{sys,proc} && \
-  mkdir -p /rootfs/alpm-hooks/usr/share/libalpm/hooks && \
-  bash -c "find /usr/share/libalpm/hooks -exec ln -sf /dev/null /rootfs/alpm-hooks{} \;" && \
-  pacman -r /rootfs -Sy --noconfirm --noscriptlet \
-    --hookdir /rootfs/alpm-hooks/usr/share/libalpm/hooks/ base base-devel git openssh && \
-  pacman -r /rootfs -S --noconfirm --noscriptlet \
-    --hookdir /rootfs/alpm-hooks/usr/share/libalpm/hooks/ archlinuxarm-keyring && \
+  mount --bind /rootfs /rootfs && \
+  pacstrap -C /etc/pacman_arm.conf -K -M /rootfs base base-devel git openssh && \
+  echo '[options]' >> /rootfs/etc/pacman.conf && \
+  grep '^NoExtract' /etc/pacman.conf >> /rootfs/etc/pacman.conf && \
   sed -i 's/^#\(en_US\.UTF-8\)/\1/' /rootfs/etc/locale.gen && \
-  ln -s ../usr/lib/os-release /rootfs/etc/os-release && \
   echo 'alarm ALL=(ALL) NOPASSWD: ALL' >> /rootfs/etc/sudoers && \
-  rm -rf /rootfs/alpm-hooks /rootfs/var/lib/pacman/sync/*
+  rm -rf /rootfs/var/lib/pacman/sync/* && \
+  arch-chroot /rootfs /usr/bin/locale-gen && \
+  arch-chroot /rootfs /usr/bin/useradd -m -U alarm
 
 FROM scratch
 COPY --from=pacstrap /rootfs/ /
-RUN \
-  ldconfig && \
-  update-ca-trust && \
-  locale-gen && \
-  (ls usr/lib/sysusers.d/*.conf | /usr/share/libalpm/scripts/systemd-hook sysusers) && \
-  useradd -m -U alarm
 ENV LANG=en_US.UTF-8
 USER alarm
 CMD ["/usr/bin/bash"]
