@@ -27,7 +27,7 @@ RUN --mount=type=tmpfs,target=/tmp \
 RUN --security=insecure \
   mkdir -p /rootfs && \
   mount --bind /rootfs /rootfs && \
-  pacstrap -C /etc/pacman_arm.conf -K -M /rootfs base base-devel git openssh && \
+  pacstrap -C /etc/pacman_arm.conf -G -M /rootfs base base-devel archlinux-keyring archlinuxarm-keyring git openssh && \
   echo '[options]' >> /rootfs/etc/pacman.conf && \
   grep '^NoExtract' /etc/pacman.conf >> /rootfs/etc/pacman.conf && \
   sed -i 's/^#\(en_US\.UTF-8\)/\1/' /rootfs/etc/locale.gen && \
