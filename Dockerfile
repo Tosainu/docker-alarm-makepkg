@@ -32,9 +32,10 @@ RUN --security=insecure \
   grep '^NoExtract' /etc/pacman.conf >> /rootfs/etc/pacman.conf && \
   sed -i 's/^#\(en_US\.UTF-8\)/\1/' /rootfs/etc/locale.gen && \
   echo 'alarm ALL=(ALL) NOPASSWD: ALL' >> /rootfs/etc/sudoers && \
-  rm -rf /rootfs/var/lib/pacman/sync/* && \
+  rm -rf /rootfs/var/lib/pacman/sync/* /rootfs/var/cache/pacman/pkg/* && \
   arch-chroot /rootfs /usr/bin/locale-gen && \
   arch-chroot /rootfs /usr/bin/useradd -m -U alarm
+
 
 FROM scratch
 COPY --from=pacstrap /rootfs/ /
