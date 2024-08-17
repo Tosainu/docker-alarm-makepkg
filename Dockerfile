@@ -1,17 +1,17 @@
 # syntax=docker/dockerfile:1-labs
 
-FROM --platform=$BUILDPLATFORM archlinux:latest@sha256:271083843fa6569f02dfc78b2bab94fce8d705c8aa9d581fc838437930ed977b as pacstrap
+FROM --platform=$BUILDPLATFORM archlinux:latest@sha256:271083843fa6569f02dfc78b2bab94fce8d705c8aa9d581fc838437930ed977b AS pacstrap
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
-ARG ARCHLINUXARM_PACKAGE_KEY=68B3537F39A313B3E574D06777193F152BDBE6A6
+ARG ARCHLINUXARM_PACKAGE_GPG=68B3537F39A313B3E574D06777193F152BDBE6A6
 RUN --mount=type=tmpfs,target=/tmp \
   pacman-key --init && \
   pacman-key --populate archlinux && \
   pacman -Syy --noconfirm archlinux-keyring && \
   pacman -Su --noconfirm arch-install-scripts && \
-  pacman-key --recv-keys "$ARCHLINUXARM_PACKAGE_KEY" && \
-  pacman-key --finger "$ARCHLINUXARM_PACKAGE_KEY" && \
-  pacman-key --lsign-key "$ARCHLINUXARM_PACKAGE_KEY" && \
+  pacman-key --recv-keys "$ARCHLINUXARM_PACKAGE_GPG" && \
+  pacman-key --finger "$ARCHLINUXARM_PACKAGE_GPG" && \
+  pacman-key --lsign-key "$ARCHLINUXARM_PACKAGE_GPG" && \
   echo 'Server = http://mirror.archlinuxarm.org/$arch/$repo' > /etc/pacman.d/mirrorlist_arm && \
   sed 's!\(/etc/pacman.d/mirrorlist\)!\1_arm! ; /NoExtract\s*=.*\betc\/pacman.conf\b.*/d' /etc/pacman.conf > /etc/pacman_arm.conf && \
   case "$TARGETPLATFORM" in \
