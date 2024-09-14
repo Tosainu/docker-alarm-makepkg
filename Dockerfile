@@ -12,7 +12,7 @@ RUN --mount=type=tmpfs,target=/tmp \
   pacman-key --recv-keys "$ARCHLINUXARM_PACKAGE_GPG" && \
   pacman-key --finger "$ARCHLINUXARM_PACKAGE_GPG" && \
   pacman-key --lsign-key "$ARCHLINUXARM_PACKAGE_GPG" && \
-  echo 'Server = http://mirror.archlinuxarm.org/$arch/$repo' > /etc/pacman.d/mirrorlist_arm && \
+  echo 'Server = https://ca.us.mirror.archlinuxarm.org/$arch/$repo' > /etc/pacman.d/mirrorlist_arm && \
   sed 's!\(/etc/pacman.d/mirrorlist\)!\1_arm! ; /NoExtract\s*=.*\betc\/pacman.conf\b.*/d' /etc/pacman.conf > /etc/pacman_arm.conf && \
   case "$TARGETPLATFORM" in \
   linux/arm64) \
