@@ -22,7 +22,7 @@ RUN --mount=type=tmpfs,target=/tmp \
   *) \
     exit 1 ;; \
   esac && \
-  pacman -Syydd --noconfirm --config /etc/pacman_arm.conf --dbpath "$(mktemp -d)" archlinuxarm-keyring && \
+  pacman -Syydd --noconfirm --config /etc/pacman_arm.conf --dbpath "$(setpriv --reuid=alpm --regid=alpm --init-groups mktemp -d)" archlinuxarm-keyring && \
   pacman-key --populate archlinuxarm
 RUN --security=insecure \
   mkdir -p /rootfs && \
