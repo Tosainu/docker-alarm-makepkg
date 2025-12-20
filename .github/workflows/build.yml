@@ -24,10 +24,10 @@ jobs:
           sudo mkdir -p /etc/pacman.d
           echo 'Server = https://ca.us.mirror.archlinuxarm.org/$arch/$repo' | sudo tee /etc/pacman.d/mirrorlist
       - run: |
-          sudo pacman-key --init
-          # sudo pacman-key --recv-keys "$ARCHLINUXARM_PACKAGE_GPG"
-          # sudo pacman-key --finger "$ARCHLINUXARM_PACKAGE_GPG"
-          # sudo pacman-key --lsign-key "$ARCHLINUXARM_PACKAGE_GPG"
+          sudo pacman-key --init 
+          sudo pacman-key --keyserver keyserver.ubuntu.com --recv-keys "$ARCHLINUXARM_PACKAGE_GPG"
+          sudo pacman-key --finger "$ARCHLINUXARM_PACKAGE_GPG"
+          sudo pacman-key --lsign-key "$ARCHLINUXARM_PACKAGE_GPG"
         env:
           ARCHLINUXARM_PACKAGE_GPG: 68B3537F39A313B3E574D06777193F152BDBE6A6
       - run: |
