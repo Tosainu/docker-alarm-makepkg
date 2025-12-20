@@ -23,7 +23,7 @@ jobs:
       - run: |
           sudo mkdir -p /rootfs
           sudo mount --bind /rootfs /rootfs
-          sudo pacstrap -C /etc/pacman_arm.conf -G -M /rootfs base base-devel archlinux-keyring archlinuxarm-keyring git openssh
+          sudo pacstrap -C pacman.conf -G -M /rootfs base base-devel archlinux-keyring archlinuxarm-keyring git openssh
       - run: sudo tar --xattrs cf rootfs.tar -C /rootfs .
       - uses: actions/upload-artifact@v4.6.1
         with:
