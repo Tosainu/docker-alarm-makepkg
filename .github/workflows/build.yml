@@ -29,11 +29,13 @@ jobs:
           ARCHLINUXARM_PACKAGE_GPG: 68B3537F39A313B3E574D06777193F152BDBE6A6
       - run: |
           mkdir -p rootfs/var/lib/pacman/
+          mkdir -p rootfs/alpm-hooks/usr/share/libalpm/hooks
           fakechroot -- fakeroot -- pacman -Sy -r rootfs \
             --noconfirm \
             --dbpath rootfs/var/lib/pacman \
             --config pacman.conf \
             --noscriptlet \
+            --hookdir "$PWD/rootfs/alpm-hooks/usr/share/libalpm/hooks/
             base base-devel archlinux-keyring archlinuxarm-keyring git openssh
           fakechroot -- fakeroot -- chroot rootfs update-ca-trust
           fakechroot -- fakeroot -- chroot rootfs pacman-key --init
