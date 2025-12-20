@@ -21,6 +21,13 @@ jobs:
           sudo mkdir -p /etc/pacman.d
           echo 'Server = https://ca.us.mirror.archlinuxarm.org/$arch/$repo' | sudo tee /etc/pacman.d/mirrorlist
       - run: |
+          pacman-key --init
+          pacman-key --recv-keys "$ARCHLINUXARM_PACKAGE_GPG"
+          pacman-key --finger "$ARCHLINUXARM_PACKAGE_GPG"
+          pacman-key --lsign-key "$ARCHLINUXARM_PACKAGE_GPG"
+        env:
+          ARCHLINUXARM_PACKAGE_GPG: 68B3537F39A313B3E574D06777193F152BDBE6A6
+      - run: |
           sudo mkdir -p /rootfs
           sudo mount --bind /rootfs /rootfs
           sudo pacstrap -C pacman.conf -G -M /rootfs base base-devel archlinux-keyring archlinuxarm-keyring git openssh
