@@ -35,7 +35,7 @@ jobs:
             --dbpath rootfs/var/lib/pacman \
             --config pacman.conf \
             --noscriptlet \
-            --hookdir "$PWD/rootfs/alpm-hooks/usr/share/libalpm/hooks/
+            --hookdir "$PWD/rootfs/alpm-hooks/usr/share/libalpm/hooks/"
             base base-devel archlinux-keyring archlinuxarm-keyring git openssh
           fakechroot -- fakeroot -- chroot rootfs update-ca-trust
           fakechroot -- fakeroot -- chroot rootfs pacman-key --init
