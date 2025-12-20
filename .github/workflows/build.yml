@@ -32,7 +32,7 @@ jobs:
           sudo mkdir -p /rootfs
           sudo mount --bind /rootfs /rootfs
           sudo pacstrap -C pacman.conf -G -M /rootfs base base-devel archlinux-keyring archlinuxarm-keyring git openssh
-      - run: sudo tar --create --xattrs --file rootfs.tar --directory /rootfs .
+      - run: sudo tar --create --numeric-owner --xattrs --acls --file rootfs.tar --directory /rootfs .
       - uses: actions/upload-artifact@v4.6.1
         with:
           path: rootfs.tar
