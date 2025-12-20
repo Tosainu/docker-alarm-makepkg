@@ -21,8 +21,6 @@ jobs:
             arch-install-scripts \
             makepkg \
             pacman-package-manager
-          sudo mkdir -p /etc/pacman.d
-          echo 'Server = https://ca.us.mirror.archlinuxarm.org/$arch/$repo' | sudo tee /etc/pacman.d/mirrorlist
       - run: |
           sudo pacman-key --init 
           sudo pacman-key --keyserver keyserver.ubuntu.com --recv-keys "$ARCHLINUXARM_PACKAGE_GPG"
@@ -34,7 +32,7 @@ jobs:
           sudo mkdir -p /rootfs
           sudo mount --bind /rootfs /rootfs
           sudo pacstrap -C pacman.conf -G -M /rootfs base base-devel archlinux-keyring archlinuxarm-keyring git openssh
-      - run: sudo tar --xattrs cf rootfs.tar -C /rootfs .
+      - run: sudo tar cf rootfs.tar -C /rootfs .
       - uses: actions/upload-artifact@v4.6.1
         with:
           path: rootfs.tar
