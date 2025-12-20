@@ -18,6 +18,7 @@ jobs:
       - run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends pacman-package-manager arch-install-scripts
+          sudo mkdir -p /etc/pacman.d
           echo 'Server = https://ca.us.mirror.archlinuxarm.org/$arch/$repo' | sudo tee /etc/pacman.d/mirrorlist
       - run: |
           sudo mkdir -p /rootfs
