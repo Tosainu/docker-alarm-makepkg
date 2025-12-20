@@ -35,10 +35,10 @@ jobs:
             --config pacman.conf \
             --noscriptlet \
             base base-devel archlinux-keyring archlinuxarm-keyring git openssh
-          fakechroot -- fakeroot -- chroot "$BUILDDIR" update-ca-trust
-          fakechroot -- fakeroot -- chroot "$BUILDDIR" pacman-key --init
-          fakechroot -- fakeroot -- chroot "$BUILDDIR" pacman-key --populate
-          fakechroot -- fakeroot -- chroot "$BUILDDIR" /usr/bin/systemd-sysusers --root "/"
+          fakechroot -- fakeroot -- chroot rootfs update-ca-trust
+          fakechroot -- fakeroot -- chroot rootfs pacman-key --init
+          fakechroot -- fakeroot -- chroot rootfs pacman-key --populate
+          fakechroot -- fakeroot -- chroot rootfs /usr/bin/systemd-sysusers --root "/"
           sed -i -e 's/^root::/root:!:/' rootfs/etc/shadow
       - run: fakeroot -- tar --create --numeric-owner --xattrs --acls --exclude-from=exclude --file rootfs.tar --directory rootfs .
       - uses: actions/upload-artifact@v4.6.1
