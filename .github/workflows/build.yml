@@ -21,6 +21,20 @@ jobs:
     outputs: &archlinux-outputs
       digest: ${{ fromJSON(steps.bake.outputs.metadata)[github.job]['containerimage.digest'] }}
     steps: &archlinux-steps
+      - &metadata-action
+        uses: docker/metadata-action@v5.10.0
+        id: meta
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: index
+        with:
+          bake-target: ${{ github.job }}
+          images: ${{ vars.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch,enable={{is_not_default_branch}}
+            type=ref,event=tag
+            type=ref,event=pr
+            type=schedule,pattern={{date 'YYYYMMDD'}}
       - uses: docker/setup-buildx-action@v3.12.0
       - uses: docker/login-action@v3.7.0
         with:
@@ -31,9 +45,13 @@ jobs:
         id: bake
         with:
           targets: ${{ github.job }}
+          files: |
+            docker-bake.hcl
+            cwd://${{ steps.meta.outputs.bake-file-annotations }}
+            cwd://${{ steps.meta.outputs.bake-file-labels }}
           set: |
             ${{ github.job }}.output=type=image,push=true,push-by-digest=true
-            ${{ github.job }}.tags=ghcr.io/tosainu/archlinux
+            ${{ github.job }}.tags=${{ vars.IMAGE_NAME }}
 
   archlinux-armv7h:
     runs-on: ubuntu-24.04-arm
@@ -52,21 +70,21 @@ jobs:
       - archlinux-armv7h
       - archlinux-x86_64
     steps:
+      - *metadata-action
       - uses: docker/login-action@v3.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - id: tag
+      - name: Merge images
         run: |
-          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
-            echo "name=pr-${GITHUB_REF_NAME%/merge}" >> "$GITHUB_OUTPUT"
-          else
-            echo "name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-          fi
-      - run: >-
-          docker buildx imagetools create
-          --tag ghcr.io/tosainu/archlinux:${{ steps.tag.outputs.name }}
-          ghcr.io/tosainu/archlinux@${{ needs.archlinux-aarch64.outputs.digest }}
-          ghcr.io/tosainu/archlinux@${{ needs.archlinux-armv7h.outputs.digest }}
-          ghcr.io/tosainu/archlinux@${{ needs.archlinux-x86_64.outputs.digest }}
+          mapfile -t -d $'\0' args < \
+            <(jq --raw-output0 '.annotations[] |= ["--annotation", .] | .tags[] |= ["--tag", .] | pick(.annotations, .tags) | flatten | .[]' <<< "$METADATA_JSON")
+          mapfile -t -d $'\0' -O "${#args[@]}" args < \
+            <(jq --raw-output0 '"\(env.IMAGE_NAME)@\(.[].outputs.digest)"' <<< "$NEEDS_JSON")
+          printf -- '- %s\n' "${args[@]}"
+          docker buildx imagetools create "${args[@]}"
+        env:
+          IMAGE_NAME: ${{ vars.IMAGE_NAME }}
+          METADATA_JSON: ${{ steps.meta.outputs.json }}
+          NEEDS_JSON: ${{ toJSON(needs) }}
