@@ -1,44 +1,62 @@
-# syntax=docker/dockerfile:1-labs
+ARG PACMAN_KEYRING=archlinux-keyring
 
-FROM --platform=$BUILDPLATFORM archlinux:latest@sha256:644b416048d39616bbaca93ce768ba492655c83fba80ceca65a4f59dcabdcac0 AS pacstrap
-ARG BUILDPLATFORM
-ARG TARGETPLATFORM
-ARG ARCHLINUXARM_PACKAGE_GPG=68B3537F39A313B3E574D06777193F152BDBE6A6
-RUN --mount=type=tmpfs,target=/tmp \
+
+FROM scratch AS archlinux-keyring-tmp
+ADD --unpack=true --checksum=sha256:3f7644b971e08b5a77b40b84547626783100b01a966ae083f4e3f45255d0bcce \
+  https://gitlab.archlinux.org/archlinux/archlinux-keyring/-/releases/20260206/downloads/archlinux-keyring-20260206.tar.gz /
+FROM scratch AS archlinux-keyring
+# simulate `--strip-components=1`
+COPY --from=archlinux-keyring-tmp /* /
+
+
+FROM scratch AS archlinuxarm-keyring
+ADD --checksum=sha256:6ce771e853f04a38a5b533cb33e61f877b9b06b58b6db051eb8a15d737a2332f \
+  https://github.com/archlinuxarm/PKGBUILDs/raw/b23ffc3983abdd3435e910bfd6dcce0f13e4f087/core/archlinuxarm-keyring/archlinuxarm.gpg /
+ADD --checksum=sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 \
+  https://github.com/archlinuxarm/PKGBUILDs/raw/b23ffc3983abdd3435e910bfd6dcce0f13e4f087/core/archlinuxarm-keyring/archlinuxarm-revoked /
+ADD --checksum=sha256:f2a7250f2a2b77542f82f4219b2bae7895f27b3dcfdf350b497e2be306af776d \
+  https://github.com/archlinuxarm/PKGBUILDs/raw/b23ffc3983abdd3435e910bfd6dcce0f13e4f087/core/archlinuxarm-keyring/archlinuxarm-trusted /
+
+
+# variable cannot be used in `--from`, define a new stage as a workaround
+FROM $PACMAN_KEYRING AS keyring
+
+
+FROM alpine:3.23.3@sha256:25109184c71bdad752c8312a8623239686a9a2071e8825f20acb8f2198c3f659 AS rootfs
+RUN apk add --no-cache pacman
+COPY --link pacman.conf /
+ARG PACMAN_ARCH=auto
+ARG PACMAN_CONF_EXTRA
+RUN --mount=type=bind,from=keyring,target=/usr/share/pacman/keyrings \
+  sed -i 's/^#\?\(Architecture\)\s.*$/\1 = '"$PACMAN_ARCH"'/' pacman.conf && \
+  echo -n "$PACMAN_CONF_EXTRA" >> pacman.conf && \
+  mkdir -m 0755 \
+    /rootfs \
+    /rootfs/var \
+    /rootfs/var/lib \
+    /rootfs/var/lib/pacman \
+    /rootfs/var/log && \
   pacman-key --init && \
-  pacman-key --populate archlinux && \
-  pacman -Syy --noconfirm archlinux-keyring && \
-  pacman -Su --noconfirm arch-install-scripts && \
-  pacman-key --recv-keys "$ARCHLINUXARM_PACKAGE_GPG" && \
-  pacman-key --finger "$ARCHLINUXARM_PACKAGE_GPG" && \
-  pacman-key --lsign-key "$ARCHLINUXARM_PACKAGE_GPG" && \
-  echo 'Server = https://ca.us.mirror.archlinuxarm.org/$arch/$repo' > /etc/pacman.d/mirrorlist_arm && \
-  sed 's!\(/etc/pacman.d/mirrorlist\)!\1_arm! ; /NoExtract\s*=.*\betc\/pacman.conf\b.*/d' /etc/pacman.conf > /etc/pacman_arm.conf && \
-  case "$TARGETPLATFORM" in \
-  linux/arm64) \
-    sed 's/\(Architecture\s*=\).\+$/\1 aarch64/' -i /etc/pacman_arm.conf ;; \
-  linux/arm/v7) \
-    sed 's/\(Architecture\s*=\).\+$/\1 armv7h/' -i /etc/pacman_arm.conf ;; \
-  *) \
-    exit 1 ;; \
-  esac && \
-  pacman -Syydd --noconfirm --config /etc/pacman_arm.conf --dbpath "$(setpriv --reuid=alpm --regid=alpm --init-groups mktemp -d)" archlinuxarm-keyring && \
-  pacman-key --populate archlinuxarm
-RUN --security=insecure \
-  mkdir -p /rootfs && \
-  mount --bind /rootfs /rootfs && \
-  pacstrap -C /etc/pacman_arm.conf -G -M /rootfs base base-devel archlinux-keyring archlinuxarm-keyring git openssh && \
-  echo '[options]' >> /rootfs/etc/pacman.conf && \
-  grep '^NoExtract' /etc/pacman.conf >> /rootfs/etc/pacman.conf && \
+  pacman-key --populate && \
+  pacman \
+    -Sy \
+    --config=/pacman.conf \
+    --root /rootfs \
+    --disable-sandbox \
+    --noconfirm \
+    --noprogressbar \
+    --noscriptlet \
+    base && \
+  sed -i -e 's/^root::/root:!:/' /rootfs/etc/shadow && \
   sed -i 's/^#\(en_US\.UTF-8\)/\1/' /rootfs/etc/locale.gen && \
-  echo 'alarm ALL=(ALL) NOPASSWD: ALL' >> /rootfs/etc/sudoers && \
-  rm -rf /rootfs/var/lib/pacman/sync/* /rootfs/var/cache/pacman/pkg/* && \
-  arch-chroot /rootfs /usr/bin/locale-gen && \
-  arch-chroot /rootfs /usr/bin/useradd -m -U alarm
+  chroot /rootfs /usr/bin/locale-gen && \
+  rm -rf \
+    /rootfs/etc/resolv.conf \
+    /rootfs/var/lib/pacman/sync/* \
+    /rootfs/var/log/pacman.log
 
 
-FROM scratch
-COPY --from=pacstrap /rootfs/ /
+FROM scratch AS archlinux
+COPY --from=rootfs /rootfs /
 ENV LANG=en_US.UTF-8
-USER alarm
 CMD ["/usr/bin/bash"]
