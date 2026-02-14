@@ -27,6 +27,7 @@ RUN apk add --no-cache pacman
 COPY --link pacman.conf /
 ARG PACMAN_ARCH=auto
 ARG PACMAN_CONF_EXTRA
+ARG PACMAN_PACKAGES=base
 RUN --mount=type=bind,from=keyring,target=/usr/share/pacman/keyrings \
   sed -i 's/^#\?\(Architecture\)\s.*$/\1 = '"$PACMAN_ARCH"'/' pacman.conf && \
   echo -n "$PACMAN_CONF_EXTRA" >> pacman.conf && \
@@ -46,7 +47,7 @@ RUN --mount=type=bind,from=keyring,target=/usr/share/pacman/keyrings \
     --noconfirm \
     --noprogressbar \
     --noscriptlet \
-    base && \
+    $PACMAN_PACKAGES && \
   sed -i -e 's/^root::/root:!:/' /rootfs/etc/shadow && \
   sed -i 's/^#\(en_US\.UTF-8\)/\1/' /rootfs/etc/locale.gen && \
   chroot /rootfs /usr/bin/locale-gen && \

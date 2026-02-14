@@ -37,6 +37,7 @@ target "archlinux" {
     PACMAN_ARCH = item.pacman_arch
     PACMAN_CONF_EXTRA = item.pacman_conf_extra
     PACMAN_KEYRING = item.pacman_keyring
+    PACMAN_PACKAGES = item.pacman_packages
   }
   matrix = {
     item = [
@@ -44,18 +45,21 @@ target "archlinux" {
         pacman_arch = "aarch64"
         pacman_conf_extra = repos_arm
         pacman_keyring = "archlinuxarm-keyring"
+        pacman_packages = "base archlinuxarm-keyring"
         platform = "linux/arm64"
       },
       {
         pacman_arch = "armv7h"
         pacman_conf_extra = repos_arm
         pacman_keyring = "archlinuxarm-keyring"
+        pacman_packages = "base archlinuxarm-keyring"
         platform = "linux/arm/v7"
       },
       {
         pacman_arch = "x86_64"
         pacman_conf_extra = repos_x86_64
         pacman_keyring = "archlinux-keyring"
+        pacman_packages = "base"
         platform = "linux/amd64"
       },
     ]
